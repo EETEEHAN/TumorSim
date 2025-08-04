@@ -1,6 +1,88 @@
-# TumorSim: Agent-Based Tumor Growth Simulator
+# TumorSim: A Biologically Calibrated Tumor Growth Simulator
 
-TumorSim is an agent-based modeling framework for simulating cancer cell growth on a 2D grid. It tracks individual cells, their mutations, proliferation behavior, and interactions with neighboring cells. The simulator is designed to be biologically plausible and has been calibrated using real tumor growth data.
+TumorSim is an agent-based simulation of tumor growth written in Python. It models the spatial expansion, mutation accumulation, and proliferative behavior of cancer cells on a discrete 2D grid. This project was calibrated using real biological data from tumor growth studies to match observed in vitro expansion dynamics, making it suitable for hypothesis generation and educational demonstrations.
+
+## Features
+
+- Agent-based simulation of individual cancer cells
+- Customizable parameters: mutation rate, proliferation chance, aggressiveness
+- Spatial pressure and crowding constraints
+- Mutation type tracking and visualization
+- Time series logging and growth curve generation
+- Parameter sweep and optimization tools
+- Calibration using real tumor growth data via ML-based curve fitting
+
+---
+
+## Simulation Architecture
+
+### Environment & Tumor Classes
+
+The simulation is based on two main classes:
+
+- `Environment`: defines the 2D grid, manages spatial occupancy, and tracks cell pressure
+- `Tumor`: maintains a list of all `Cell` and `Cancer_Cell` agents, handles timestep logic, cell growth, mutation inheritance, and division
+
+Each `Cancer_Cell` object contains parameters for:
+
+- `mutation_rate`: probability of gaining a mutation at each timestep
+- `proliferation_chance`: base probability of cell division
+- `aggressiveness`: modifier that scales proliferation based on local pressure
+
+### Growth and Division Dynamics
+
+At each timestep:
+
+1. All cells grow in a randomized order.
+2. For cancer cells, local pressure is computed based on neighboring occupancy.
+3. If a cell decides to divide (stochastically based on pressure and parameters), a daughter cell is spawned.
+4. Mutation inheritance is modeled with additional random mutations.
+
+---
+
+## Calibration to Real Biological Data
+
+### Growth Curve Alignment
+
+We calibrated simulation parameters using a dataset of tumor size measurements over time, extracted from the `tumorgrowth.xlsx` file (`AnalysisData` sheet). To enable direct comparison, both simulated and real tumor sizes were:
+
+- Normalized to [0, 1] range (to compare growth shapes, not absolute size)
+- Mapped to normalized time (0 to 1), since simulation steps and experimental days may differ
+
+This allows for a time-independent, shape-based alignment of tumor growth curves.
+
+### Parameter Fitting via Machine Learning
+
+We used a machine learning-inspired optimization strategy to identify parameters that best match the real tumor growth curve. Specifically:
+
+- **Objective**: Minimize the mean squared error (MSE) between real and simulated tumor growth trajectories.
+- **Approach**: Used `scipy.optimize.minimize` (L-BFGS-B algorithm) to search over:
+  - Mutation rate ∈ [0.001, 0.05]
+  - Proliferation chance ∈ [0.1, 0.8]
+  - Aggressiveness ∈ [0.5, 2.5]
+- **Data Handling**:
+  - Interpolated both real and simulated growth curves to 100 evenly spaced timepoints
+  - Compared trajectories using `sklearn.metrics.mean_squared_error`
+
+Best-fit parameters obtained:
+```
+Mutation Rate:    0.0100
+Proliferation:    0.3000
+Aggressiveness:   1.2000
+Final MSE:        ~0.007
+```
+
+These parameters were then used in the final model validation.
+
+---
+
+## Visualizations
+
+- `tumor_growth_comparison.png`: Comparison of normalized real and simulated tumor growth over time
+- `final_cell_heatmap.png`: Final spatial distribution of cells
+- `final_mutation_heatmap.png`: Spatial mutation map of the tumor
+- `tumor_growth_timeseries.png`: Raw time series data of simulated growth
+- `tumor_growth_animation.gif`: Animated growth progression of the tumor
 
 ---
 
@@ -8,110 +90,66 @@ TumorSim is an agent-based modeling framework for simulating cancer cell growth 
 
 ```
 TumorSim/
-├── TumorSimV8.py              # Core simulation logic (Environment, Tumor, Cell classes)
-├── calibrate.py               # Script to fit parameters using real tumor growth data
-├── plot_final.py              # Generates final plot comparing calibrated simulation to real data
-├── compare_real_data.py       # Earlier version of comparison script
-├── Sweep.py                   # Parameter sweep script
-├── analyze_time_series.py     # Analyzes and visualizes simulation time series
-├── Generate_time_series.py    # Runs simulations and exports tumor growth over time
-├── Visualize_sweep.py         # Plots summary metrics from parameter sweep
-├── tumorgrowth.xlsx           # Real tumor growth data (Excel format)
-├── timeseries_output/         # Folder with exported CSVs of time series simulations
-├── parameter_sweep_results.csv
-├── tumor_growth_comparison.png
-├── final_cell_heatmap.png
-├── tumor_growth_animation.gif
-└── README.md                  # This file
+├── TumorSimV8.py                # Main simulation logic
+├── calibrate.py                 # MSE-based parameter optimization
+├── plot_final.py                # Final visualization script (calibrated vs. real)
+├── Sweep.py                     # Parameter sweep over growth settings
+├── analyze_time_series.py       # Plot and summary stats from multiple runs
+├── Generate_time_series.py      # Batch generator for time series
+├── compare_real_data.py         # Overlay real and simulated data
+├── tumorgrowth.xlsx             # Experimental tumor size data
+├── timeseries_output/           # CSVs from simulation runs
+├── tumor_growth.json            # Optional export of tumor state
+├── *.png, *.gif                 # Visual outputs
+└── README.md                    # Project documentation (this file)
 ```
 
 ---
 
-## Simulation Overview
+## Dependencies
 
-Each simulation begins with a single cancer cell on a 2D grid. At each step:
+- Python ≥ 3.8
+- NumPy
+- pandas
+- matplotlib
+- seaborn
+- scipy
+- scikit-learn
 
-- Cells grow and accumulate mutations
-- Cancer cells evaluate whether to divide based on proliferation chance and local crowding
-- New daughter cells may inherit mutations or acquire new ones
-- Tumor expands spatially and tracks cell-level metrics
+Install with:
 
----
-
-## Biological Calibration
-
-### Growth Calibration
-
-Each simulation step is interpreted as one full cell division cycle (∼24 hours). This assumption allows tumor doubling times to be estimated and aligned with empirical data.
-
-For example:
-- A tumor progressing from 1 to ~128 cells in ~7–10 steps implies a doubling time of 3–5 days
-- These growth dynamics fall within known ranges for breast, colorectal, and small cell lung cancers
-
-**References**:  
-- Spratt et al., *Radiology*, 1996  
-- Friberg & Mattson, *Anticancer Research*, 1997
-
----
-
-### Mutation Burden Calibration
-
-According to TCGA and COSMIC:
-- Most solid tumors carry ~10–100 mutations per megabase
-- This translates to ~300–3000 coding mutations per tumor
-- In our simulation, tumors with ~200 cells typically show 2–5 mutations per cell, aligning with these values
-
-**References**:  
-- Lawrence et al., *Nature*, 2013  
-- COSMIC database
-
----
-
-## Parameter Fitting
-
-To identify realistic biological parameters, we used a calibration script (`calibrate.py`) that:
-
-- Loads real tumor growth data from `tumorgrowth.xlsx`
-- Simulates tumors using a parameterized agent-based model
-- Interpolates both real and simulated growth curves to 100 timepoints
-- Minimizes mean squared error (MSE) between normalized growth curves
-
-**Best-Fit Parameters Identified**:
-```
-Mutation rate:     0.0100
-Proliferation:     0.3000
-Aggressiveness:    1.2000
-Final MSE:         ~0.0074
-```
-
-The final comparison plot (in `tumor_fit_vs_real.png`) shows close alignment between real tumor data and the calibrated simulation.
-
----
-
-## Getting Started
-
-**Dependencies**:
-- Python 3.11+
-- numpy, pandas, matplotlib, seaborn, scikit-learn, openpyxl
-
-**To run the simulation**:
 ```bash
-python TumorSimV8.py
+pip install -r requirements.txt
 ```
 
-**To calibrate the parameters**:
-```bash
-python calibrate.py
-```
+---
 
-**To generate the final plot**:
+## Running the Simulation
+
+To run a calibrated simulation and generate plots:
+
 ```bash
 python plot_final.py
 ```
 
+To perform parameter fitting against real data:
+
+```bash
+python calibrate.py
+```
+
+To generate multiple time series and analyze trends:
+
+```bash
+python Generate_time_series.py
+python analyze_time_series.py
+```
+
 ---
 
-## Acknowledgments
+## References
 
-This project was developed as part of a computational biology module focused on modeling tumor dynamics and parameter calibration using real-world data.
-
+- Spratt et al., *Radiology*, 1996
+- Friberg & Mattson, *Anticancer Research*, 1997
+- Lawrence et al., *Nature*, 2013
+- COSMIC: Catalogue Of Somatic Mutations In Cancer
