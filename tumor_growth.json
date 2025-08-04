@@ -1,0 +1,62 @@
+[
+  {
+    "step": 1,
+    "cancer_cell_count": 1,
+    "average_age": 1.0,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 2,
+    "cancer_cell_count": 2,
+    "average_age": 1.0,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 3,
+    "cancer_cell_count": 2,
+    "average_age": 2.0,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 4,
+    "cancer_cell_count": 3,
+    "average_age": 2.0,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 5,
+    "cancer_cell_count": 4,
+    "average_age": 2.25,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 6,
+    "cancer_cell_count": 5,
+    "average_age": 2.6,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 7,
+    "cancer_cell_count": 5,
+    "average_age": 3.6,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 8,
+    "cancer_cell_count": 6,
+    "average_age": 3.8333333333333335,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 9,
+    "cancer_cell_count": 6,
+    "average_age": 4.833333333333333,
+    "average_mutations": 0.0
+  },
+  {
+    "step": 10,
+    "cancer_cell_count": 7,
+    "average_age": 5.0,
+    "average_mutations": 0.0
+  }
+]
